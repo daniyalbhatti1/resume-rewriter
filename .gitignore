@@ -1,0 +1,19 @@
+node_modules/
+.next/
+.data/
+.tools/
+.sites-runtime/
+.env*
+!.env.example
+*.zip
+*.tex
+*.pdf
+*.log
+*.tsbuildinfo
+coverage/
+.DS_Store
+public/pdf.worker.min.mjs
+public/pdfjs-fonts/
+
+# The only publishable resume is fictional sample data.
+!examples/sample-resume.tex
