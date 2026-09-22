@@ -37,7 +37,7 @@ Both development and production bind to `127.0.0.1`. This is a single-user local
 
 1. Import your own `.tex` file or single-file ZIP. To try the workflow first, import [the fictional sample](examples/sample-resume.tex). Replacing the base clears the current draft and preserves your application tracker. Optional `INITIAL_RESUME_PATH` imports a local resume only when the data directory is first created.
 2. Paste a complete job description, or extract a public job page and review the extracted text. Blocked or JavaScript-only pages may require pasting instead.
-3. Optionally fill company and role for download filenames, then generate the rewrite. The app rewrites and fact-checks the proposed bullets before applying them.
+3. Optionally fill company and role, then generate the rewrite. Tailored downloads use `Company - original resume filename.pdf` and `.tex` (the upload’s `.zip` or `.tex` extension is replaced). If no company is identified, the prefix is `Tailored`. The app rewrites and fact-checks the proposed bullets before applying them.
 4. Compare the original and revised text. Edit a bullet using `**bold**` for emphasis or restore its exact original LaTeX. Manual edits are your own wording and are not sent through AI.
 5. Update the PDF after edits. A draft becomes ready only when it compiles and does not exceed the base page count. Download the PDF and `.tex` from the same revision.
 6. Answer **Did you apply to this role?** Choose **Yes, I applied** to add it to your tracker, or **Not yet** to keep it available for later. This app never submits an application for you.

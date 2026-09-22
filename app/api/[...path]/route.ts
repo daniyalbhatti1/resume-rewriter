@@ -52,8 +52,11 @@ export async function GET(request: Request, context: Context) {
         if (!compilation || compilation.sourceHash !== hash(source) || (draft && compilation.revision !== draft.revision)) throw new AppError("Update the PDF to match the current draft.", 409);
         bytes = new Uint8Array(await readFile(nodePath.join(dataDir(), "artifacts", compilation.artifact)));
       }
-      const name = draft ? [draft.company, draft.role, "resume"].filter(Boolean).join("-") : "base-resume";
-      const filename = (name.normalize("NFKD").replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/-+/g, "-").slice(0, 140) || "resume") + "." + format;
+      const filenamePart = (value: string) => value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9 _().&'-]+/g, "-").replace(/\s+/g, " ").trim().replace(/^[. -]+|[. -]+$/g, "").slice(0, 90).trim();
+      const originalName = filenamePart(state.base.filename.replace(/\.(tex|zip)$/i, "")) || "resume";
+      const name = draft ? `${filenamePart(draft.company) || "Tailored"} - ${originalName}` : "base-resume";
+      const filename = `${name}.${format}`;
       const disposition = url.searchParams.has("download") || format === "tex" ? "attachment" : "inline";
       return new Response(bytes as BodyInit, { headers: { "Content-Type": format === "pdf" ? "application/pdf" : "application/x-tex; charset=utf-8", "Content-Disposition": `${disposition}; filename="${filename}"`, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
     }
