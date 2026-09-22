@@ -35,6 +35,32 @@ export async function GET(request: Request, context: Context) {
       "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": 'attachment; filename="applications.csv"', "Cache-Control": "no-store",
     } });
     if (route === "state") return json(await publicState(state));
+    const savedResumeRoute = /^applications\/([^/]+)\/resume\.(pdf|tex)$/.exec(route);
+    if (savedResumeRoute) {
+      const [, id, format] = savedResumeRoute;
+      const entry = state.applications?.find(application => application.id === id);
+      if (!entry) throw new AppError("Application not found.", 404);
+      const resume = entry.resume;
+      if (!resume) throw new AppError("No resume was saved for this older application.", 404);
+      let bytes: Uint8Array;
+      if (format === "tex") bytes = new TextEncoder().encode(resume.source);
+      else {
+        if (!resume.compilation || resume.compilation.sourceHash !== hash(resume.source))
+          throw new AppError("This saved resume has no matching PDF. Download its LaTeX source instead.", 404);
+        try { bytes = new Uint8Array(await readFile(nodePath.join(dataDir(), "artifacts", resume.compilation.artifact))); }
+        catch (error) {
+          if ((error as NodeJS.ErrnoException).code === "ENOENT") throw new AppError("The saved PDF is missing. Download its LaTeX source instead.", 404);
+          throw error;
+        }
+      }
+      const name = `${entry.company || "Application"} - ${resume.filename}`.replace(/[^a-zA-Z0-9 _().&'-]+/g, "-").slice(0, 160);
+      const disposition = new URL(request.url).searchParams.has("download") || format === "tex" ? "attachment" : "inline";
+      return new Response(bytes as BodyInit, { headers: {
+        "Content-Type": format === "pdf" ? "application/pdf" : "application/x-tex; charset=utf-8",
+        "Content-Disposition": `${disposition}; filename="${name}.${format}"`,
+        "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
+      } });
+    }
     if (route.startsWith("artifacts/")) {
       const file = route.slice("artifacts/".length);
       if (!/^(base|draft)\.(pdf|tex)$/.test(file)) throw new AppError("File not found.", 404);

@@ -51,6 +51,35 @@ describe("application tracking", () => {
     expect(() => updateApplication(s, { id: "draft-1", revision: 1, status: "applied", appliedAt: "2027-01-01" }, now)).toThrow(/future/);
     expect(JSON.stringify(s)).toBe(original);
   });
+  it("updates prepared snapshots and freezes the submitted version across edits and rewrites", async () => {
+    const s: AppState = { base: base(), draft: null };
+    await generateDraft(s, job, deps); ensureApplications(s, now);
+    const entry = s.applications![0];
+    expect(entry.resume?.compilation?.sourceHash).toBe(hash(entry.resume!.source));
+    s.draft!.changes = [{ blockId: s.base!.blocks[0].id, spans: [{ text: "Built TypeScript tools.", bold: false }], reason: "Edit", status: "edited" }];
+    s.draft!.revision++; s.draft!.compilation = undefined;
+    updateApplication(s, { id: entry.id, revision: 1, status: "applied" }, now);
+    expect(entry.resume!.source).toContain("Built TypeScript tools.");
+    expect(entry.resume!.compilation).toBeUndefined();
+    const saved = structuredClone(entry.resume);
+    s.draft!.changes = []; s.draft!.revision++;
+    ensureApplications(s); expect(entry.resume).toEqual(saved);
+    await generateDraft(s, { ...job, company: "Second" }, deps);
+    expect(s.applications![1].resume).toEqual(saved);
+    s.base = null; s.draft = null; ensureApplications(s);
+    expect(s.applications![1].resume).toEqual(saved);
+  });
+  it("backfills only the matching active resume for existing tracker entries", () => {
+    const s = state(); s.draft!.baseHash = s.base!.hash;
+    ensureApplications(s, now);
+    delete s.applications![0].resume;
+    s.applications![0].appliedAt = "2026-09-20";
+    expect(ensureApplications(s, now)).toBe(true);
+    expect(s.applications![0].resume!.source).toBe(s.base!.source);
+    delete s.applications![0].resume; s.draft = null;
+    expect(ensureApplications(s, now)).toBe(false);
+    expect(s.applications![0].resume).toBeUndefined();
+  });
   it("validates dates, bounded notes and safe job links", () => {
     for (const patch of [{ appliedAt: "2026-02-31" }, { jobUrl: "javascript:alert(1)" }, { jobUrl: "https://user:password@example.org" }, { notes: "a".repeat(10001) }]) {
       expect(applicationUpdateSchema.safeParse({ id: "draft-1", revision: 1, ...patch }).success).toBe(false);

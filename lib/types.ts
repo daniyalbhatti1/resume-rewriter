@@ -22,11 +22,16 @@ export type Draft = {
   compilation?: Compilation; error?: string; warnings: string[];
 };
 export type ApplicationStatus = "pending" | "not_applied" | "applied" | "interview" | "offer" | "rejected" | "withdrawn";
+export type SavedResume = {
+  source: string; filename: string; draftRevision: number; savedAt: string;
+  compilation?: Compilation;
+};
 export type Application = {
   id: string; draftId: string; baseHash: string; revision: number;
   company: string; role: string; jobUrl: string; jobText: string;
   status: ApplicationStatus; createdAt: string; updatedAt: string;
   appliedAt: string | null; notes: string;
+  resume?: SavedResume;
 };
 // Optional only for backwards compatibility with pre-tracker workspaces.
 export type AppState = { base: BaseResume | null; draft: Draft | null; applications?: Application[] };

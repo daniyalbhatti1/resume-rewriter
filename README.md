@@ -49,7 +49,7 @@ Automatic generation can make up to two shorter, fact-checked revisions to meet 
 
 Each generated draft creates one prepared job record. Downloading a resume does not mark it applied. Unanswered and “Not yet” jobs remain in the prepared list even after a different rewrite or a base import. Clicking “Yes” records the application date; you can correct it in the details editor. Submitted statuses are Applied, Interviewing, Offer, Rejected, and Withdrawn. Choosing Not applied yet removes an accidental confirmation from the application count without deleting the job.
 
-The tracker retains the job description and link for reference. It tracks jobs, not historical resume revisions: download your tailored PDF/LaTeX before generating another draft. The interface uses your local calendar date when you confirm an application; the date is editable. API clients that omit the date use the server’s UTC date. Tracker changes use revision checks so an old browser tab cannot silently overwrite a newer edit.
+The tracker retains the job description, link, and tailored resume for each job. Prepared resumes stay updated as you edit; confirming an application freezes its saved version. View or download the saved PDF and LaTeX source from the tracker, even after generating another draft or replacing the base. A PDF is available when that version was compiled. Older entries can recover a resume only if their matching draft is still active. The interface uses your local calendar date when you confirm an application; the date is editable. API clients that omit the date use the server’s UTC date. Tracker changes use revision checks so an old browser tab cannot silently overwrite a newer edit.
 
 ## Supported templates
 
@@ -77,6 +77,8 @@ The URL fetcher validates public IPs, pins the address used for the connection, 
 | POST | `/api/rewrite` | JSON `{text, company?, role?, url?}`: newline-delimited progress, result, or error events |
 | PATCH | `/api/applications` | `{id, revision, status?, company?, role?, appliedAt?, jobUrl?, notes?}`: update a prepared job or application |
 | GET | `/api/applications/export` | Download submitted applications as CSV |
+| GET | `/api/applications/:id/resume.pdf` | View a saved application PDF; add `?download=1` to download |
+| GET | `/api/applications/:id/resume.tex` | Download the saved application LaTeX source |
 | PATCH | `/api/draft` | `{baseHash, draftId, revision, edits:[{blockId, spans, revert?}]}`: optimistic revision checks |
 | POST | `/api/compile` | `{target:"base"}` or `{target:"draft",draftId,revision}` |
 | GET | `/api/artifacts/base.pdf` or `.tex` | Original base artifacts |

@@ -15,6 +15,7 @@ export async function mutate<T>(fn: () => Promise<T>): Promise<T> {
   try { return await fn(); } finally { shared.resumeBusy = false; }
 }
 export async function saveState(state: AppState) {
+  ensureApplications(state);
   await mkdir(dataDir(), { recursive: true, mode: 0o700 });
   const temp = path.join(dataDir(), `${randomUUID()}.tmp`);
   await writeFile(temp, JSON.stringify(state), { mode: 0o600 });

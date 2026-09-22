@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AppError } from "./errors";
+import { applyChanges, hash } from "./latex";
 import type { AppState, Application } from "./types";
 
 export const jobUrlSchema = z.string().trim().max(4000).refine(value => {
@@ -29,6 +30,20 @@ export function ensureApplications(state: AppState, now = new Date().toISOString
       status: "pending", createdAt: now, updatedAt: now, appliedAt: null, notes: "" });
     changed = true;
   }
+  const entry = draft && state.applications.find(a => a.draftId === draft.id);
+  // Submitted resumes are frozen, even if the active draft is edited later.
+  // Older entries can only be recovered when their original draft is still active.
+  if (entry && draft && state.base?.hash === draft.baseHash && (!entry.appliedAt || !entry.resume)) {
+    const source = applyChanges(state.base, draft.baseHash, draft.changes);
+    const compilation = draft.compilation?.sourceHash === hash(source) && draft.compilation.revision === draft.revision
+      ? structuredClone(draft.compilation) : undefined;
+    if (!entry.resume || entry.resume.source !== source || entry.resume.draftRevision !== draft.revision ||
+      JSON.stringify(entry.resume.compilation) !== JSON.stringify(compilation)) {
+      entry.resume = { source, filename: state.base.filename.replace(/\.(tex|zip)$/i, ""),
+        draftRevision: draft.revision, savedAt: now, compilation };
+      changed = true;
+    }
+  }
   return changed;
 }
 export function updateApplication(state: AppState, input: ApplicationUpdate, now = new Date().toISOString()): Application {
@@ -45,6 +60,9 @@ export function updateApplication(state: AppState, input: ApplicationUpdate, now
     const latestLocalDate = new Date(Date.parse(now) + 14 * 60 * 60 * 1000).toISOString().slice(0, 10);
     if (next.appliedAt > latestLocalDate) throw new AppError("The application date cannot be in the future.");
   }
+  ensureApplications(state, now);
+  // Preserve the snapshot refreshed immediately before confirmation.
+  next.resume = entry.resume;
   Object.assign(entry, next);
   return entry;
 }
